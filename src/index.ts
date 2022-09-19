@@ -1,17 +1,10 @@
-// const escpos = require('escpos')
 import escpos, { USB } from 'escpos'
-// install escpos-usb adapter module manually
 escpos.USB = require('escpos-usb')
-// Select the adapter based on your printer type
 const printerList: any = escpos.USB.findPrinter()
 const { idVendor, idProduct } = printerList[0].deviceDescriptor
 const device = new escpos.USB(idVendor, idProduct)
 
-// const device  = new escpos.Network('localhost')
-// const device  = new escpos.Serial('/dev/usb/lp0')
-
 const options = { encoding: 'UTF-8' /* default */ }
-// encoding is optional
 
 const printer = new escpos.Printer(device, options)
 
@@ -65,11 +58,30 @@ app.post('/github', (req: Request, res: Response) => {
         requested_reviewer: { login: reviewer },
       } = req.body
       if (reviewer === 'cesarvargas00') {
-        console.log(title)
+        // console.log(title)
         print(title, author, url, created_at)
       }
   }
   res.send('ok')
+})
+const crypto = require('crypto')
+const secret =
+  'A5TVC5XWV0PBGQ5ZI47LHRTKDDETAQTQC2IFP7BSZUZO3TDUH6CJPY60GZHKOKVD'
+app.post('/clickup', (req: Request, res: Response) => {
+  const { event, history_items } = req.body
+  const hash = crypto
+    .createHmac('sha256', secret)
+    .update(JSON.stringify(req.body))
+  const signature = hash.digest('hex')
+  if (req.get('x-signature') !== signature) return res.sendStatus(500)
+  switch (event) {
+    case 'taskStatusUpdated': {
+      if (history_items[0].before.status === 'qa') {
+        console.log(req.body)
+        // print('taskStatusUpdated', 'cesarvargas00', 'https://app.clickup.com/1234567', '2020-01-01')
+      }
+    }
+  }
 })
 
 app.listen(port, () => {
